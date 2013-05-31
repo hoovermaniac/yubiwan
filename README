@@ -1,0 +1,42 @@
+About 
+
+Yubiwan is a Python Yubikey one-time-password validation module for use with Google Appengine web applications. Yubiwan uses Appengines URLFetch service to validate OTPs with Yubico's validation server.
+
+
+Setting the Client Variables
+
+The first thing to do is to open "yubiwan.py" in a text editor and set the variable client_id to your Yubico assigned client ID (as a string, not an integer). Optionally, if you want the module to sign validation requests, and check response signatures, set the variable client_key to your Yubico assigned client key string. Otherwise leave the value equal to None, and the module will communicate with the Yubico server via HTTPS.
+
+
+Using Yubiwan with Google Appengine
+
+To use, simply include the "yubiwan.py" file with your other application Python files. You can then import the module into a Python file where you want to use it with "import yubiwan". Alternatively, you can import only the main OTP validation function with "from yubiwan import validate_otp".
+Important note: Yubiwan uses Pycrypto's random number generator, so you will also have to add the following to the libraries section of your app.ymal file:
+
+- name: pycrypto
+  version: "2.6"
+
+
+Validating an OTP with Yubiwan
+
+To validate an OTP, call yubiwan's "validate_otp" function. The function takes at minimum one argument, a Yubikey OTP. It can also take an optional second argument, a Yubikey's ID string (e.g. the ID of the user's registered Yubikey). If the ID string is provided, the validate_otp function will check that the OTP is from that Yubikey, and if not, validation will fail.
+The validate_otp function returns a Python dictionary, which will contain at a minimum two keys: "valid" and "error". The value of "valid" will be either True or False indicating whether OTP validation was successful or not. If the value of "valid" is False, the value of "error" will be a concise error message string indicating why the OTP failed validation, otherwise it will be None. If validate_otp received a reply from the Yubico validation server, the server response key-value pairs will also be included in the dictionary returned. Finally, if there was an HTTP error, the HTTP error code will be included under the key "HTTP_Code".
+
+Although the function can return a lot of information, to determine if the OTP was validated you need only check the value of "valid". The other information is provided so you can determine why validation failed and perhaps tailor how your application handles the error.
+
+
+List of Possible Error Messages:
+
+'OTP length is invalid' - The supplied OTP length was <32 or >48 characters.
+'That's not the Yubikey you're looking for' - The OTP was not from the key whose ID was passed as a second argument to the function.
+'OTP is not valid' - The Yubico server response 'status' value was not 'OK'. In this case you can check the key 'status' for the actual value returned by the server (refer to the Yubikey Validation Protocol for possible returned values).
+'Request OTP does not match returned OTP'- An abnormality was found in that the OTP string returned by the Yubico server was not the same as the OTP being validated.
+'Bad response signature'- The signature of the Yubico response data did not match the signature sent with the data.
+'HTTP request not successful' - An HTTP error occurred. Check the key 'HTTP_Code' for the error code.
+'Server did not respond' - Attempt to connect to the Yubico server timed out.
+'SSL certificate validation failed' - Only if using HTTPS to connect (i.e. no client key provided).
+'URL not valid' - Self explanatory. If this error persists, check the current Yubico validation server address.
+
+For a list of possible Yubico server response items, please refer to the current Yubikey Validation Protocol document. This also provides a list of possible values for the 'status' key, and what they mean.
+You should be able to find the latest Validation Protocol here:
+https://github.com/Yubico/yubikey-val/wiki/_pages
